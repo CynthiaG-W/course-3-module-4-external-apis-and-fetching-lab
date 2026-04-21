@@ -1,46 +1,35 @@
-// Fetch Weather Alerts
+
 async function fetchWeatherAlerts(state) {
-    try {
-        const response = await fetch(
-            `https://api.weather.gov/alerts/active?area=${state}`
-        );
+    const response = await fetch(
+        `https://api.weather.gov/alerts/active?area=${state}`
+    );
 
-        // Handle HTTP errors
-        if (!response.ok) {
-            throw new Error(`Unable to fetch alerts (${response.status})`);
-        }
-
-        const data = await response.json();
-
-        console.log("Weather API response:", data);
-
-        return data;
-
-    } catch (error) {
-        console.log(error.message);
-        throw error;
+    if (!response.ok) {
+        throw new Error(`Unable to fetch alerts (${response.status})`);
     }
-}
-//Display Alerts
-function displayAlerts(data, stateName = "Selected State") {
-    const container = document.getElementById("alerts");
 
-    // Clear previous results
+    return await response.json();
+}
+
+function displayAlerts(data, stateName = "Selected State") {
+    const container = document.getElementById("alerts-display");
+    const errorDiv = document.getElementById("error-message");
+
+    if (!container || !errorDiv) return;
+
     container.innerHTML = "";
 
-    const errorDiv = document.getElementById("error-message");
     errorDiv.textContent = "";
-    errorDiv.style.display = "none";
+    errorDiv.classList.add("hidden");
 
-    const features = data.features || [];
+    const features = data?.features || [];
 
-    // Summary
     const summary = document.createElement("h2");
     summary.textContent =
         `Current watches, warnings, and advisories for ${stateName}: ${features.length}`;
+
     container.appendChild(summary);
 
-    // No alerts case
     if (features.length === 0) {
         const noAlerts = document.createElement("p");
         noAlerts.textContent = "No active alerts for this state.";
@@ -48,7 +37,6 @@ function displayAlerts(data, stateName = "Selected State") {
         return;
     }
 
-    // List alerts
     const list = document.createElement("ul");
 
     features.forEach(feature => {
@@ -64,40 +52,42 @@ function displayAlerts(data, stateName = "Selected State") {
     container.appendChild(list);
 }
 
-// UI and Error Handling
+// SAFE INIT (fixes "nothing happens" issue)
+document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("fetch-alerts");
 
-document.getElementById("fetch-btn").addEventListener("click", async () => {
-    const input = document.getElementById("state-input");
-    const state = input.value.trim().toUpperCase();
+    if (!btn) return;
 
-    const errorDiv = document.getElementById("error-message");
-    const container = document.getElementById("alerts");
+    btn.addEventListener("click", async () => {
+        console.log("Button clicked");
 
-    // Reset UI every time
-    errorDiv.textContent = "";
-    errorDiv.style.display = "none";
-    container.innerHTML = "";
+        const input = document.getElementById("state-input");
+        const errorDiv = document.getElementById("error-message");
+        const container = document.getElementById("alerts-display");
 
-    try {
-        // Validate input
-        if (!state || state.length !== 2) {
-            throw new Error("Please enter a valid 2-letter state code.");
+        const state = input.value.trim().toUpperCase();
+
+        container.innerHTML = "";
+        errorDiv.textContent = "";
+        errorDiv.classList.add("hidden");
+
+        try {
+            if (!state || state.length !== 2) {
+                throw new Error("Please enter a valid 2-letter state code.");
+            }
+
+            const data = await fetchWeatherAlerts(state);
+
+            displayAlerts(data, state);
+
+        } catch (error) {
+            console.log(error.message);
+
+            errorDiv.textContent = error.message;
+            errorDiv.classList.remove("hidden");
+
+        } finally {
+            input.value = "";
         }
-
-        // Fetch data
-        const data = await fetchWeatherAlerts(state);
-
-        // Display data
-        displayAlerts(data, state);
-
-    } catch (error) {
-        console.log(error.message);
-
-        errorDiv.textContent = error.message;
-        errorDiv.style.display = "block";
-
-    } finally {
-        // Always clear input
-        input.value = "";
-    }
+    });
 });
