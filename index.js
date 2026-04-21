@@ -11,7 +11,7 @@ async function fetchWeatherAlerts(state) {
     return await response.json();
 }
 
-function displayAlerts(data, stateName = "Selected State") {
+function displayAlerts(data) {
     const container = document.getElementById("alerts-display");
     const errorDiv = document.getElementById("error-message");
 
@@ -24,10 +24,9 @@ function displayAlerts(data, stateName = "Selected State") {
 
     const features = data?.features || [];
 
+    // ✅ FIXED: exact test requirement format
     const summary = document.createElement("h2");
-    summary.textContent =
-        `Current watches, warnings, and advisories for ${stateName}: ${features.length}`;
-
+    summary.textContent = `Weather Alerts: ${features.length}`;
     container.appendChild(summary);
 
     if (features.length === 0) {
@@ -52,14 +51,13 @@ function displayAlerts(data, stateName = "Selected State") {
     container.appendChild(list);
 }
 
-// SAFE INIT (fixes "nothing happens" issue)
+// SAFE INIT
 document.addEventListener("DOMContentLoaded", () => {
     const btn = document.getElementById("fetch-alerts");
 
     if (!btn) return;
 
     btn.addEventListener("click", async () => {
-        console.log("Button clicked");
 
         const input = document.getElementById("state-input");
         const errorDiv = document.getElementById("error-message");
@@ -77,8 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const data = await fetchWeatherAlerts(state);
-
-            displayAlerts(data, state);
+            displayAlerts(data);
 
         } catch (error) {
             console.log(error.message);
